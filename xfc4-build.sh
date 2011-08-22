@@ -22,8 +22,11 @@
 
 # (only tested with bash)
 
-# set this to the desired PREFIX, e.g. /usr/local
-PREFIX="/usr/local"
+# set this to the desired PREFIX, e.g. /usr/local (might be overridden by environment variable)
+if [ -z "$PREFIX" ]
+then
+	PREFIX="/usr/local"
+fi
 GLOBAL_OPTIONS="--enable-maintainer-mode --disable-debug"
 
 
@@ -98,6 +101,7 @@ panel-plugins/xfce4-systemload-plugin \
 
 LOG="/tmp/xfce-build.log"
 ERROR_LOG="/tmp/xfce-ebuild.log"
+
 
 
 function check_for_sudo()
