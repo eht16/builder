@@ -22,28 +22,28 @@
 
 # (only tested with bash)
 
-# set this to the desired prefix, e.g. /usr/local
-prefix="/usr/local"
-global_options="--enable-maintainer-mode --disable-debug"
+# set this to the desired PREFIX, e.g. /usr/local
+PREFIX="/usr/local"
+GLOBAL_OPTIONS="--enable-maintainer-mode --disable-debug"
 
 
 # additional configure arguments for certain packages
-# to add options for other packages use opts_$packagename=...
-opts_libxfcegui4="--disable-gladeui --with-libglade-module-path=$prefix/libglade/2.0/"
-opts_libxfce4ui="--disable-gladeui"
-opts_xfwm4="--enable-startup-notification --disable-compositor --enable-randr"
-opts_xfce4_session="--disable-session-screenshots --enable-libgnome-keyring"
-opts_xfdesktop="--enable-thunarx --enable-exo"
-opts_xfce4_panel="--enable-startup-notification"
-opts_xfce_utils="--with-xsession-prefix=$prefix --disable-debug"
-opts_xfce4_settings="--enable-sound-settings --enable-pluggable-dialogs"
-opts_exo="--with-gio-module-dir=$prefix/lib/gio/modules"
+# to add options for other packages use OPTIONS_$packagename=...
+OPTIONS_libxfcegui4="--disable-gladeui --with-libglade-module-path=$PREFIX/libglade/2.0/"
+OPTIONS_libxfce4ui="--disable-gladeui"
+OPTIONS_xfwm4="--enable-startup-notification --disable-compositor --enable-randr"
+OPTIONS_xfce4_session="--disable-session-screenshots --enable-libgnome-keyring"
+OPTIONS_xfdesktop="--enable-thunarx --enable-exo"
+OPTIONS_xfce4_panel="--enable-startup-notification"
+OPTIONS_xfce_utils="--with-xsession-PREFIX=$PREFIX --disable-debug"
+OPTIONS_xfce4_settings="--enable-sound-settings --enable-pluggable-dialogs"
+OPTIONS_libxfce4uis_exo="--with-gio-module-dir=$PREFIX/lib/gio/modules"
 
 
 
 # you should not need to change this
-export PATH="$prefix/bin:$PATH"
-export PKG_CONFIG_PATH="$prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
+export PATH="$PREFIX/bin:$PATH"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
 BASE_DIR="`pwd`"
 START_AT=""
 SUDO_CMD=""
@@ -51,7 +51,7 @@ SUDO_CMD=""
 
 # these packages are must be available on http://git.xfce.org/
 # see init() for details
-xfce4_modules="\
+XFCE4_MODULES="\
 xfce/xfce4-dev-tools \
 xfce/libxfce4util \
 xfce/xfconf \
@@ -96,15 +96,15 @@ panel-plugins/xfce4-systemload-plugin \
 "
 
 
-log="/tmp/xfce-build.log"
-elog="/tmp/xfce-ebuild.log"
+LOG="/tmp/xfce-build.log"
+ERROR_LOG="/tmp/xfce-ebuild.log"
 
 
 function check_for_sudo()
 {
-	if [ ! -w "$prefix" ]
+	if [ ! -w "$PREFIX" ]
 	then
-		# if the user can't write into the prefix, we use sudo and hope the user
+		# if the user can't write into $PREFIX, we use sudo and hope the user
 		# configured it properly
 		SUDO_CMD=$(command -v sudo)
 	fi
@@ -114,9 +114,9 @@ function run_make()
 {
 	if [ -x waf -a -f wscript ]
 	then
-		$2 ./waf $1 >>$log 2>>$elog
+		$2 ./waf $1 >>$LOG 2>>$ERROR_LOG
 	else
-		$2 make $1 >>$log 2>>$elog
+		$2 make $1 >>$LOG 2>>$ERROR_LOG
 	fi
 	if [ ! "x$?" = "x0" ]
 	then
@@ -141,20 +141,20 @@ function build()
 		# prepare and read package-specific options
 		base_name=`basename $1`
 		clean_name=`echo $base_name | sed 's/-/_/g'`
-		options=`eval echo '$opts_'$clean_name`
+		options=`eval echo '$OPTIONS_'$clean_name`
 
 		echo "Additional arguments for configure: $options"
 
 		if [ -x waf -a -f wscript ]
 		then
-			./waf configure --prefix=$prefix $options >>$log 2>>$elog
+			./waf configure --prefix=$PREFIX $options >>$LOG 2>>$ERROR_LOG
 		else
 			if [ ! -x configure -o configure.ac -nt configure -o configure.ac.in -nt configure \
 				-o configure.in -nt configure -o configure.in.in -nt configure ]
 			then
-				./autogen.sh --prefix=$prefix $global_options $options >>$log 2>>$elog
+				./autogen.sh --prefix=$PREFIX $GLOBAL_OPTIONS $options >>$LOG 2>>$ERROR_LOG
 			else [ configure.ac -nt configure ]
-				./configure --prefix=$prefix $global_options $options >>$log 2>>$elog
+				./configure --prefix=$PREFIX $GLOBAL_OPTIONS $options >>$LOG 2>>$ERROR_LOG
 			fi
 		fi
 	fi
@@ -261,9 +261,9 @@ else
 	shift
 	if [ $# -gt 0 ]
 	then
-		xfce4_modules="$@"
+		XFCE4_MODULES="$@"
 	fi
-	for i in $xfce4_modules
+	for i in $XFCE4_MODULES
 	do
 		if [ -n "$START_AT" -a "$i" != "$START_AT" ]
 		then
