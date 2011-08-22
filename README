@@ -1,0 +1,14 @@
+Syntax: xfce4-build.sh command [packages...]
+
+commands:
+init      - download all needed packages from the GIT server
+update    - runs 'git pull' on all package subdirectories
+clean     - runs 'make clean' on all package subdirectories
+distclean - runs 'make distclean' on all package subdirectories
+build     - runs 'configure', 'make' and 'make install' on all package subdirectories
+echo      - just prints all package modules
+
+The commands update, clean, build and echo takes as second argument a comma separated list of package names, e.g.
+xfce4-build.sh build apps/midori apps/gigolo
+(this is useful if you updated all packages and there were only changes in some packages, so you don't have to rebuild all packages)
+If the second argument is omitted, the command takes all packages.
