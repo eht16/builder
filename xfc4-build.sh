@@ -20,6 +20,13 @@
 #      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 
+# TODOs:
+# - evaluate a new environment variable to skip certain packages
+# - add separators with package name to the log files to make it more readable
+# - fix uninstall
+# - improve git cleaning (gc, prune)
+
+
 # (only tested with bash)
 
 # set this to the desired PREFIX, e.g. /usr/local (might be overridden by environment variable)
