@@ -22,7 +22,6 @@
 
 # TODOs:
 # - evaluate a new environment variable to skip certain packages
-# - add separators with package name to the log files to make it more readable
 # - fix uninstall
 # - improve git cleaning (gc, prune)
 
@@ -136,13 +135,24 @@ function run_make()
 	fi
 }
 
+function echo_and_log()
+{
+	echo "$@"
+	echo "" >>$LOG
+	echo "$@" >>$LOG
+	echo "" >>$LOG
+	echo "" >>$ERROR_LOG
+	echo "$@" >>$ERROR_LOG
+	echo "" >>$ERROR_LOG
+}
+
 function build()
 {
 	# TODO basically we want to uninstall before installing again but this
 	# breaks the build for xfce4-screenshooter, needs to be debugged
 	#uninstall $1
 
-	echo "====================configuring and building in $1===================="
+	echo_and_log "====================configuring and building in $1===================="
 	cd "$1"
 
 	# configuring
@@ -155,7 +165,7 @@ function build()
 		clean_name=`echo $base_name | sed 's/-/_/g'`
 		options=`eval echo '$OPTIONS_'$clean_name`
 
-		echo "Additional arguments for configure: $options"
+		echo_and_log "Additional arguments for configure: $options"
 
 		if [ -x waf -a -f wscript ]
 		then
@@ -186,7 +196,7 @@ function build()
 
 function clean()
 {
-	echo "====================cleaning in $1===================="
+	echo_and_log "====================cleaning in $1===================="
 	cd "$1"
 	if [ -f Makefile -o -f wscript ]
 	then
@@ -197,7 +207,7 @@ function clean()
 
 function uninstall()
 {
-	#~ echo "====================uninstalling in $1===================="
+	#~ echo_and_log "====================uninstalling in $1===================="
 	cd "$1"
 	if [ -f Makefile -o -f wscript ]
 	then
@@ -208,7 +218,7 @@ function uninstall()
 
 function distclean()
 {
-	echo "====================cleaning in $1===================="
+	echo_and_log "====================cleaning in $1===================="
 	cd "$1"
 	if [ -f Makefile -o -f wscript ]
 	then
@@ -219,7 +229,7 @@ function distclean()
 
 function update()
 {
-	echo "====================updating in $1===================="
+	echo_and_log "====================updating in $1===================="
 	cd "$1"
 	# do not pull the history, we are not interested in, we just need a checkout
 	git pull --depth=1
