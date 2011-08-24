@@ -81,6 +81,7 @@ xfce/xfwm4 \
 xfce/tumbler \
 xfce/thunar-volman \
 xfce/xfce4-power-manager \
+bindings/xfce4-vala \
 apps/gigolo \
 apps/midori \
 apps/mousepad \
