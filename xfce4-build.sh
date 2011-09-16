@@ -47,7 +47,7 @@ OPTIONS_xfwm4="--enable-startup-notification --disable-compositor --enable-randr
 OPTIONS_xfce4_session="--disable-session-screenshots --enable-libgnome-keyring"
 OPTIONS_xfdesktop="--enable-thunarx --enable-exo"
 OPTIONS_xfce4_panel="--enable-startup-notification"
-OPTIONS_xfce_utils="--with-xsession-PREFIX=$PREFIX --disable-debug"
+OPTIONS_xfce_utils="--with-xsession-prefix=$PREFIX --disable-debug"
 OPTIONS_xfce4_settings="--enable-sound-settings --enable-pluggable-dialogs"
 OPTIONS_libxfce4uis_exo="--with-gio-module-dir=$PREFIX/lib/gio/modules"
 
