@@ -244,6 +244,7 @@ function init()
 {
 	if [ ! -d "$1" ]
 	then
+		echo_and_log "====================cloning $1===================="
 		git clone --depth=1 git://git.xfce.org/$1 $1
 	fi
 }
