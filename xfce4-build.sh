@@ -32,6 +32,9 @@
 if [ -z "$PREFIX" ]
 then
 	PREFIX="/usr/local"
+elif [ ! -d "$PREFIX" ]
+then
+	mkdir -p "$PREFIX"
 fi
 GLOBAL_OPTIONS="--enable-maintainer-mode --disable-debug"
 
