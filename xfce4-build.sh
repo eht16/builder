@@ -254,7 +254,7 @@ else
 
 	XFCE4_MODULES_A=( $XFCE4_MODULES )
 	COUNT=${#XFCE4_MODULES_A[@]}
-	INDEX=-1
+	INDEX=0
 	for i in $XFCE4_MODULES
 	do
 		let INDEX+=1
@@ -265,10 +265,10 @@ else
 		START_AT=""
 		# FIXME: Allow multiple skip packages
 		case $SKIP in $i)
-				echo_and_log "Skipping $i" "$INDEX/ $COUNT"
+				echo_and_log "Skipping $i" "$INDEX/$COUNT"
 				continue
 				;;
 		esac
-		"$cmd" $i "$INDEX/ $COUNT"
+		"$cmd" $i "$INDEX/$COUNT"
 	done
 fi
