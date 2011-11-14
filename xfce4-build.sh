@@ -34,8 +34,8 @@ GLOBAL_OPTIONS="--enable-maintainer-mode --disable-debug"
 BASE_DIR="`pwd`"
 START_AT=""
 if [ "x$PREFIX" == "x" ]; then
-    PREFIX="$BASE_DIR/install"
-    export PREFIX
+	PREFIX="$BASE_DIR/install"
+	export PREFIX
 fi
 
 
@@ -104,33 +104,33 @@ panel-plugins/xfce4-systemload-plugin \
 
 
 if [ "x$LOG" == "x" ]; then
-        LOG="/dev/stdout"
+	LOG="/dev/stdout"
 fi
 if [ "x$ERROR_LOG" == "x" ]; then
-        ERROR_LOG="/dev/stderr"
+	ERROR_LOG="/dev/stderr"
 fi
 
 function echo_and_log()
 {
-        PRETTYLINE="======= $2 $1 ======="
-        echo $PRETTYLINE
-        if [ "x$LOG" != "x/dev/stdout" ]; then
-	    echo "" >>$LOG
-	    echo $PRETTYLINE >>$LOG
-	    echo "" >>$LOG
-        fi
-        if [ "x$ERROR_LOG" != "x/dev/stderr" ]; then
-	    echo "" >>$ERROR_LOG
-	    echo $PRETTYLINE >>$ERROR_LOG
-	    echo "" >>$ERROR_LOG
-        fi
+	PRETTYLINE="======= $2 $1 ======="
+	echo $PRETTYLINE
+	if [ "x$LOG" != "x/dev/stdout" ]; then
+		echo "" >>$LOG
+		echo $PRETTYLINE >>$LOG
+		echo "" >>$LOG
+	fi
+	if [ "x$ERROR_LOG" != "x/dev/stderr" ]; then
+		echo "" >>$ERROR_LOG
+		echo $PRETTYLINE >>$ERROR_LOG
+		echo "" >>$ERROR_LOG
+	fi
 }
 
 function build_error()
 {
-        echo Build failed! To continue from here, run:
-        echo `basename $0` build --start "$1"
-        exit 1
+	echo Build failed! To continue from here, run:
+	echo `basename $0` build --start "$1"
+	exit 1
 }
 
 function build()
@@ -142,17 +142,17 @@ function build()
 	echo_and_log "Configuring and building in $1" "$2"
 	cd "$1"
 
-		# prepare and read package-specific options
-		base_name=`basename $1`
-		clean_name=`echo $base_name | sed 's/-/_/g'`
-		options=`eval echo '$OPTIONS_'$clean_name`
-        if [ -f configure.in -o -f configure.ac ]; then
-               options="$GLOBAL_OPTIONS $options"
-        fi
+	# prepare and read package-specific options
+	base_name=`basename $1`
+	clean_name=`echo $base_name | sed 's/-/_/g'`
+	options=`eval echo '$OPTIONS_'$clean_name`
+	if [ -f configure.in -o -f configure.ac ]; then
+		options="$GLOBAL_OPTIONS $options"
+	fi
 
 	# building
-        # FIXME: xfce4-dev-tools autogen without xfce4-dev-tools is broken
-        buildit install $options >>$LOG 2>>$ERROR_LOG || build_error $1
+	# FIXME: xfce4-dev-tools autogen without xfce4-dev-tools is broken
+	buildit install $options >>$LOG 2>>$ERROR_LOG || build_error $1
 
 	cd $BASE_DIR
 }
@@ -177,11 +177,11 @@ function distclean()
 {
 	echo_and_log "Cleaning in $1" "$2"
 	cd "$1"
-        if [ -x waf -a -f wscript ]; then
+	if [ -x waf -a -f wscript ]; then
 		./waf distclean >>$LOG 2>>$ERROR_LOG || exit 1
-        else
+	else
 		make distclean >>$LOG 2>>$ERROR_LOG || exit 1
-        fi
+	fi
 	cd $BASE_DIR
 }
 
@@ -214,7 +214,7 @@ then
 	echo "You should enter a command. Here is a list of possible commands:"
 	echo
 	echo "Usage:"
-        echo " " `basename $0` "command [packages...]"
+	echo " " `basename $0` "command [packages...]"
 	echo
 	echo "commands:"
 	echo "init      - download all needed packages from the GIT server"
@@ -233,14 +233,14 @@ then
 else
 	cmd="$1"
 	shift
-        case $cmd in
-            init|update|clean|distclean|build|uninstall|echo)
-                ;;
-            *)
-                echo '"'$cmd'"' is not a known command
-                exit 1
-                ;;
-        esac
+	case $cmd in
+		init|update|clean|distclean|build|uninstall|echo)
+			;;
+		*)
+			echo '"'$cmd'"' is not a known command
+			exit 1
+			;;
+	esac
 	if [ "$1" = "--start" ]
 	then
 		START_AT="$2"
@@ -252,23 +252,23 @@ else
 		XFCE4_MODULES="$@"
 	fi
 
-        XFCE4_MODULES_A=( $XFCE4_MODULES )
-        COUNT=${#XFCE4_MODULES_A[@]}
-        INDEX=-1
+	XFCE4_MODULES_A=( $XFCE4_MODULES )
+	COUNT=${#XFCE4_MODULES_A[@]}
+	INDEX=-1
 	for i in $XFCE4_MODULES
 	do
-                let INDEX+=1
+		let INDEX+=1
 		if [ -n "$START_AT" -a "$i" != "$START_AT" ]
 		then
 			continue
 		fi
 		START_AT=""
-                # FIXME: Allow multiple skip packages
-                case $SKIP in $i)
-                        echo_and_log "Skipping $i" "$INDEX/ $COUNT"
-                        continue
-                        ;;
-                esac
+		# FIXME: Allow multiple skip packages
+		case $SKIP in $i)
+				echo_and_log "Skipping $i" "$INDEX/ $COUNT"
+				continue
+				;;
+		esac
 		"$cmd" $i "$INDEX/ $COUNT"
 	done
 fi
