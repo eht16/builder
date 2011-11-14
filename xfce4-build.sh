@@ -190,7 +190,7 @@ function update()
 	echo_and_log "Updating in $1" "$2"
 	cd "$1"
 	# do not pull the history, we are not interested in, we just need a checkout
-	git pull --depth=1
+	git pull
 	# auto cleanup the repository
 	# TODO make this less aggressive
 	git gc
