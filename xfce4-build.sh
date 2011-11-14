@@ -217,12 +217,13 @@ then
 	echo " " `basename $0` "command [packages...]"
 	echo
 	echo "commands:"
-	echo "init      - download all needed packages from the GIT server"
+	echo "init      - downloads all needed packages from the GIT server"
 	echo "update    - runs 'git pull' on all package subdirectories"
 	echo "clean     - runs 'make clean' on all package subdirectories"
 	echo "distclean - runs 'make distclean' on all package subdirectories"
 	echo "build     - runs 'configure', 'make' and 'make install' on all package subdirectories"
 	echo "echo      - just prints all package modules"
+	echo "help      - shows this help screen"
 	echo
 	echo "The commands update, clean, build and echo take as second argument a comma separated list of package names, e.g."
 	echo "$0 build apps/midori apps/gigolo"
@@ -265,9 +266,9 @@ else
 		START_AT=""
 		# FIXME: Allow multiple skip packages
 		case $SKIP in $i)
-				echo_and_log "Skipping $i" "$INDEX/$COUNT"
-				continue
-				;;
+			echo_and_log "Skipping $i" "$INDEX/$COUNT"
+			continue
+			;;
 		esac
 		"$cmd" $i "$INDEX/$COUNT"
 	done
