@@ -3,7 +3,7 @@
 #      xfce4-build.sh
 #
 #      Copyright 2006-2011 Enrico Tröger <enrico@xfce.org>
-#      Copyright 2011 Christian Dywan <>
+#      Copyright 2011 Christian Dywan <christian@twotoasts.de>
 #
 #      This program is free software; you can redistribute it and/or modify
 #      it under the terms of the GNU General Public License as published by
@@ -28,15 +28,16 @@
 
 # (only tested with bash)
 
-# set this to the desired PREFIX, e.g. /usr/local (might be overridden by environment variable)
-if [ -z "$PREFIX" ]
-then
-	PREFIX="/usr/local"
-elif [ ! -d "$PREFIX" ]
-then
-	mkdir -p "$PREFIX"
-fi
+# Autotools-only options passed to all modules
 GLOBAL_OPTIONS="--enable-maintainer-mode --disable-debug"
+# you should not need to change this
+BASE_DIR="`pwd`"
+START_AT=""
+if [ "x$PREFIX" == "x" ]; then
+    PREFIX="$BASE_DIR/install"
+    export PREFIX
+fi
+
 
 
 # additional configure arguments for certain packages
@@ -52,13 +53,6 @@ OPTIONS_xfce4_settings="--enable-sound-settings --enable-pluggable-dialogs"
 OPTIONS_libxfce4uis_exo="--with-gio-module-dir=$PREFIX/lib/gio/modules"
 
 
-
-# you should not need to change this
-export PATH="$PREFIX/bin:$PATH"
-export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
-BASE_DIR="`pwd`"
-START_AT=""
-SUDO_CMD=""
 
 
 # these packages are must be available on http://git.xfce.org/
@@ -109,44 +103,34 @@ panel-plugins/xfce4-systemload-plugin \
 "
 
 
-LOG="/tmp/xfce-build.log"
-ERROR_LOG="/tmp/xfce-ebuild.log"
-
-
-
-function check_for_sudo()
-{
-	if [ ! -w "$PREFIX" ]
-	then
-		# if the user can't write into $PREFIX, we use sudo and hope the user
-		# configured it properly
-		SUDO_CMD=$(command -v sudo)
-	fi
-}
-
-function run_make()
-{
-	if [ -x waf -a -f wscript ]
-	then
-		$2 ./waf $1 >>$LOG 2>>$ERROR_LOG
-	else
-		$2 make $1 >>$LOG 2>>$ERROR_LOG
-	fi
-	if [ ! "x$?" = "x0" ]
-	then
-		exit 1;
-	fi
-}
+if [ "x$LOG" == "x" ]; then
+        LOG="/dev/stdout"
+fi
+if [ "x$ERROR_LOG" == "x" ]; then
+        ERROR_LOG="/dev/stderr"
+fi
 
 function echo_and_log()
 {
-	echo "$@"
-	echo "" >>$LOG
-	echo "$@" >>$LOG
-	echo "" >>$LOG
-	echo "" >>$ERROR_LOG
-	echo "$@" >>$ERROR_LOG
-	echo "" >>$ERROR_LOG
+        PRETTYLINE="======= $2 $1 ======="
+        echo $PRETTYLINE
+        if [ "x$LOG" != "x/dev/stdout" ]; then
+	    echo "" >>$LOG
+	    echo $PRETTYLINE >>$LOG
+	    echo "" >>$LOG
+        fi
+        if [ "x$ERROR_LOG" != "x/dev/stderr" ]; then
+	    echo "" >>$ERROR_LOG
+	    echo $PRETTYLINE >>$ERROR_LOG
+	    echo "" >>$ERROR_LOG
+        fi
+}
+
+function build_error()
+{
+        echo Build failed! To continue from here, run:
+        echo `basename $0` build --start "$1"
+        exit 1
 }
 
 function build()
@@ -155,84 +139,55 @@ function build()
 	# breaks the build for xfce4-screenshooter, needs to be debugged
 	#uninstall $1
 
-	echo_and_log "====================configuring and building in $1===================="
+	echo_and_log "Configuring and building in $1" "$2"
 	cd "$1"
 
-	# configuring
-	if [ ! -f Makefile -o wscript -nt .lock-wscript -o configure.ac -nt configure \
-		-o configure.ac.in -nt configure -o configure.in -nt configure \
-		-o configure.in.in -nt configure ]
-	then
 		# prepare and read package-specific options
 		base_name=`basename $1`
 		clean_name=`echo $base_name | sed 's/-/_/g'`
 		options=`eval echo '$OPTIONS_'$clean_name`
-
-		echo_and_log "Additional arguments for configure: $options"
-
-		if [ -x waf -a -f wscript ]
-		then
-			./waf configure --prefix=$PREFIX $options >>$LOG 2>>$ERROR_LOG
-		else
-			if [ ! -x configure -o configure.ac -nt configure -o configure.ac.in -nt configure \
-				-o configure.in -nt configure -o configure.in.in -nt configure ]
-			then
-				./autogen.sh --prefix=$PREFIX $GLOBAL_OPTIONS $options >>$LOG 2>>$ERROR_LOG
-			else [ configure.ac -nt configure ]
-				./configure --prefix=$PREFIX $GLOBAL_OPTIONS $options >>$LOG 2>>$ERROR_LOG
-			fi
-		fi
-	fi
-	if [ ! "x$?" = "x0" ]
-	then
-		exit 1;
-	fi
+        if [ -f configure.in -o -f configure.ac ]; then
+               options="$GLOBAL_OPTIONS $options"
+        fi
 
 	# building
-	run_make
-
-	# installing
-	run_make install $SUDO_CMD
+        # FIXME: xfce4-dev-tools autogen without xfce4-dev-tools is broken
+        buildit install $options >>$LOG 2>>$ERROR_LOG || build_error $1
 
 	cd $BASE_DIR
 }
 
 function clean()
 {
-	echo_and_log "====================cleaning in $1===================="
+	echo_and_log "Cleaning in $1" "$2"
 	cd "$1"
-	if [ -f Makefile -o -f wscript ]
-	then
-		run_make clean
-	fi
+		buildit clean >>$LOG 2>>$ERROR_LOG || exit 1
 	cd $BASE_DIR
 }
 
 function uninstall()
 {
-	#~ echo_and_log "====================uninstalling in $1===================="
+	#~ echo_and_log "Uninstalling in $1" "$2"
 	cd "$1"
-	if [ -f Makefile -o -f wscript ]
-	then
-		run_make uninstall
-	fi
+		buildit uninstall >>$LOG 2>>$ERROR_LOG || exit 1
 	cd $BASE_DIR
 }
 
 function distclean()
 {
-	echo_and_log "====================cleaning in $1===================="
+	echo_and_log "Cleaning in $1" "$2"
 	cd "$1"
-	if [ -f Makefile -o -f wscript ]
-	then
-		run_make distclean
-	fi
+        if [ -x waf -a -f wscript ]; then
+		./waf distclean >>$LOG 2>>$ERROR_LOG || exit 1
+        else
+		make distclean >>$LOG 2>>$ERROR_LOG || exit 1
+        fi
 	cd $BASE_DIR
 }
 
 function update()
 {
-	echo_and_log "====================updating in $1===================="
+	echo_and_log "Updating in $1" "$2"
 	cd "$1"
 	# do not pull the history, we are not interested in, we just need a checkout
 	git pull --depth=1
@@ -247,18 +202,19 @@ function init()
 {
 	if [ ! -d "$1" ]
 	then
-		echo_and_log "====================cloning $1===================="
+		echo_and_log "Cloning $1" "$2"
 		git clone --depth=1 git://git.xfce.org/$1 $1
 	fi
 }
 
 # main()  ;-)
 
-if [ "x$1" = "x" ]
+if [ "x$1" = "x" -o "x$1" = "xhelp" ]
 then
 	echo "You should enter a command. Here is a list of possible commands:"
 	echo
-	echo "syntax: $0 command [packages...]"
+	echo "Usage:"
+        echo " " `basename $0` "command [packages...]"
 	echo
 	echo "commands:"
 	echo "init      - download all needed packages from the GIT server"
@@ -268,17 +224,23 @@ then
 	echo "build     - runs 'configure', 'make' and 'make install' on all package subdirectories"
 	echo "echo      - just prints all package modules"
 	echo
-	echo "The commands update, clean, build and echo takes as second argument a comma separated list of package names, e.g."
+	echo "The commands update, clean, build and echo take as second argument a comma separated list of package names, e.g."
 	echo "$0 build apps/midori apps/gigolo"
 	echo "(this is useful if you updated all packages and there were only changes in some packages, so you don't have to rebuild all packages)"
 	echo "If the second argument is omitted, the command takes all packages."
 	echo
 	exit 1
 else
-	check_for_sudo
-
 	cmd="$1"
 	shift
+        case $cmd in
+            init|update|clean|distclean|build|uninstall|echo)
+                ;;
+            *)
+                echo '"'$cmd'"' is not a known command
+                exit 1
+                ;;
+        esac
 	if [ "$1" = "--start" ]
 	then
 		START_AT="$2"
@@ -289,13 +251,24 @@ else
 	then
 		XFCE4_MODULES="$@"
 	fi
+
+        XFCE4_MODULES_A=( $XFCE4_MODULES )
+        COUNT=${#XFCE4_MODULES_A[@]}
+        INDEX=-1
 	for i in $XFCE4_MODULES
 	do
+                let INDEX+=1
 		if [ -n "$START_AT" -a "$i" != "$START_AT" ]
 		then
 			continue
 		fi
 		START_AT=""
-		"$cmd" $i
+                # FIXME: Allow multiple skip packages
+                case $SKIP in $i)
+                        echo_and_log "Skipping $i" "$INDEX/ $COUNT"
+                        continue
+                        ;;
+                esac
+		"$cmd" $i "$INDEX/ $COUNT"
 	done
 fi
