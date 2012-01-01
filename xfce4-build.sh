@@ -42,6 +42,9 @@ if [ "x$BUILDIT" == "x" ]; then
 	BUILDIT="buildit"
 	export BUILDIT
 fi
+# this is necessary for Vala to find its .vapi files
+XDG_DATA_DIRS="$XDG_DATA_DIRS:$PREFIX/share"
+export XDG_DATA_DIRS
 
 
 
