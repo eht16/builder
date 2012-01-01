@@ -183,9 +183,9 @@ function distclean()
 	echo_and_log "Cleaning in $1" "$2"
 	cd "$1"
 	if [ -x waf -a -f wscript ]; then
-		./waf distclean >>$LOG 2>>$ERROR_LOG || exit 1
+		./waf distclean >>$LOG 2>>$ERROR_LOG
 	else
-		make distclean >>$LOG 2>>$ERROR_LOG || exit 1
+		make distclean >>$LOG 2>>$ERROR_LOG
 	fi
 	cd $BASE_DIR
 }
