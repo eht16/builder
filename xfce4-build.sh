@@ -151,8 +151,11 @@ function build()
 	base_name=`basename $1`
 	clean_name=`echo $base_name | sed 's/-/_/g'`
 	options=`eval echo '$OPTIONS_'$clean_name`
-	if [ -f configure.in -o -f configure.ac ]; then
-		options="$GLOBAL_OPTIONS $options"
+	if [ -f configure.in -o -f configure.in.in -o -f configure.ac -o -f configure.ac.in ]; then
+		# only for autotools
+		if [ ! -f "wscript" -a ! -f "cmake/CMakeLists.txt" -a ! -f "CMakeLists.txt" ]; then
+			options="$GLOBAL_OPTIONS $options"
+		fi
 	fi
 
 	# building
