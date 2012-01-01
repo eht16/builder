@@ -37,6 +37,11 @@ if [ "x$PREFIX" == "x" ]; then
 	PREFIX="$BASE_DIR/install"
 	export PREFIX
 fi
+if [ "x$BUILDIT" == "x" ]; then
+	# assume buildit is in the PATH
+	BUILDIT="buildit"
+	export BUILDIT
+fi
 
 
 
@@ -152,7 +157,7 @@ function build()
 
 	# building
 	# FIXME: xfce4-dev-tools autogen without xfce4-dev-tools is broken
-	buildit install $options >>$LOG 2>>$ERROR_LOG || build_error $1
+	"$BUILDIT" install $options >>$LOG 2>>$ERROR_LOG || build_error $1
 
 	cd $BASE_DIR
 }
@@ -161,7 +166,7 @@ function clean()
 {
 	echo_and_log "Cleaning in $1" "$2"
 	cd "$1"
-		buildit clean >>$LOG 2>>$ERROR_LOG || exit 1
+		"$BUILDIT" clean >>$LOG 2>>$ERROR_LOG || exit 1
 	cd $BASE_DIR
 }
 
@@ -169,7 +174,7 @@ function uninstall()
 {
 	#~ echo_and_log "Uninstalling in $1" "$2"
 	cd "$1"
-		buildit uninstall >>$LOG 2>>$ERROR_LOG || exit 1
+		"$BUILDIT" uninstall >>$LOG 2>>$ERROR_LOG || exit 1
 	cd $BASE_DIR
 }
 
