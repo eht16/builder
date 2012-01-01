@@ -1,0 +1,264 @@
+#!/bin/sh
+# Copyright 2010-2011 Christian Dywan <christian@twotoasts.de>
+#
+# This script is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+#~  buildit: build tool wrapper
+#~
+#~  Guesses the build system and attemps to configure and build the project,
+#~  including setup of pkg-config, linker and path for default or given prefix.
+#~  Silent rules and multiple jobs are setup appropriately.
+#~
+#~  Supported build tools:
+#~    WAF, CMake, Autotools, Make
+#~
+#~  Usage:
+#~    buildit [configure|build|install|uninstall|check|clean|help] [SWITCHES]
+#~
+#~  'configure' is called at least once, if PREFIX changed or SWITCHES are given.
+#~  JOBS and any SWITCHES are passed through to the configuration system.
+#~  If needed, sudo, su or fakeroot will be used to install and uninstall.
+#~  The first two letters of a command alias each command (in = install).
+#~  If DRYRUN is not empty, commands will be printed without executing.
+#~  If VERBOSE is not empty, all commands will be printed before executing.
+#~
+#~  Usage examples:
+#~  - buildit configure
+#~  - buildit configure --enable-tests
+#~  - buildit build
+#~  - JOBS=5 build
+#~  - buildit install
+#~  - buildit install --disable-unique --disable-static
+#~  - buildit uninstall
+#~  - buildit check
+#~  - PREFIX=~/devel buildit configure
+#~  - PREFIX=/opt/devel buildit install
+#~  - buildit clean
+#~  - DRYRUN=1 buildit build
+#~  - VERBOSE=1 buildit install
+
+CONFIGURE=0
+ACTION=
+SOURCEFILE=
+case $1 in
+    help|he)
+        grep -e '^#~' $0 | sed s/#~//
+        exit
+        ;;
+    test|te|check|ch)
+        ACTION=check ;;
+    install|in)
+        ACTION=install ;;
+    uninstall|un)
+        ACTION=uninstall ;;
+    configure|co)
+        CONFIGURE=1
+        ACTION=configure
+        ;;
+    build|bu)
+        ACTION=build ;;
+    clean|cl)
+        ACTION=clean ;;
+    *)
+        if [ "x$1" == "x" ]; then
+            $0 help
+            exit 1
+        fi
+        echo `basename $0`: '"'$1'"' is not a known command
+        exit 1
+esac
+if [ "x$ACTION" != "x" ]; then
+    shift 1
+fi
+
+RUNMODE=
+if [ "x$DRYRUN" != "x" ]; then
+    RUNMODE=echo
+elif [ "x$VERBOSE" != "x" ]; then
+    echoandexec() {
+        echo $*
+        $*
+    }
+    RUNMODE=echoandexec
+fi
+
+JOBFLAG=
+if [ "x$JOBS" != "x" ]; then
+    JOBFLAG="-j $JOBS"
+elif [ -r /sys/devices/system/cpu ]; then
+    JOBFLAG="-j`ls -l /sys/devices/system/cpu | egrep 'cpu[0-9]' | wc -l`"
+fi
+
+# FIXME Recognize --prefix= syntax
+if [ "x$PREFIX" == "x" ]; then
+    PREFIX='/usr/local'
+fi
+PREFIX_ARG="--prefix=$PREFIX"
+# FIXME Test that $PREFIX is an absolute path
+
+LD_LIBRARY_PATH=$PREFIX/lib:/usr/local/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH
+PATH=$PREFIX/bin/:/usr/local/bin/:$PATH
+export PATH
+PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH
+
+if [ "x$CONFIGURE" != "x1" ]; then
+    # Determine if prefix has changed
+    CONFIGURE=1
+    grep -q "\--prefix=$PREFIX'" .lock-wscript 2>/dev/null && CONFIGURE=0
+    grep -q "CMAKE_INSTALL_PREFIX:PATH=$PREFIX" build/CMakeCache.txt 2>/dev/null && CONFIGURE=0
+    grep -q "prefix='$PREFIX'" config.log 2>/dev/null && CONFIGURE=0
+fi
+
+SWITCHES="$1 $2 $3 $4 $5 $6 $7 $8 $9"
+if [ "x$1" == "x" ]; then
+    SWITCHES=
+elif [ "x$1" == "x--help" ]; then
+    # --help is only ever useful for configuration
+    CONFIGURE=1
+    ACTION=configure
+# elif [ "$ACTION" != "clean" ]; then
+    # Always configure if switches except clean are given
+    # CONFIGURE=1
+fi
+
+superusercommand() {
+    # If both mkdir and touch succeed, sudo is unneeded
+    mkdir -p $PREFIX 2>/dev/null && touch -ac $PREFIX 2>/dev/null && (exec $*; return)
+    if [ "x$_SBOX_DIR" != "x" ]; then
+        $RUNMODE fakeroot $*
+    elif [ ! -w "$PREFIX" ]; then
+        SUDO=`command -v sudo`
+        if [ "x$SUDO" == "x" ]; then
+            # FIXME Run su directly
+            echo Please run the following command:
+            echo su -c "'$*'"
+            exit 1
+        else
+            # sudo may not pass on environment variables by default
+            $RUNMODE $SUDO -E $*
+        fi
+    fi
+}
+
+function highlight() {
+    sed "s/$1/`tput smso`&`tput rmso`/g" "${2:--}";
+}
+
+echo -n `basename $0`' running '$ACTION' with prefix '$PREFIX
+if [ "x$JOBFLAG" != "x" ]; then
+    echo -n ' and '$JOBFLAG
+fi
+if [ "x$SWITCHES" != "x" ]; then
+    echo -n ' and '$SWITCHES
+fi
+
+# WAF
+if [ -f waf ]; then
+    echo : WAF
+    if [ "$ACTION" == "clean" ]; then
+        $RUNMODE ./waf clean || exit 1
+        exit 0
+    fi
+
+    if [ ! -f .lock-wscript -o "x$CONFIGURE" == "x1" ]; then
+        $RUNMODE ./waf configure $PREFIX_ARG $SWITCHES || exit 1
+    fi
+    if [ "$ACTION" == "install" -o "$ACTION" == "uninstall" ]; then
+        $RUNMODE ./waf build $JOBFLAG || exit 1
+        superusercommand ./waf $ACTION $JOBSFLAGS || exit 1
+    elif [ "$ACTION" == "check" ]; then
+        $RUNMODE ./waf check $JOBFLAGS || exit 1
+    elif [ "$ACTION" != "configure" ]; then
+        $RUNMODE ./waf build $JOBFLAG || exit 1
+    fi
+
+    exit 0
+fi
+
+# CMake
+if [ ! -f autogen.sh ]; then
+    if [ -f "cmake/CMakeLists.txt" -o -f CMakeLists.txt ]; then
+        echo : CMake
+        if [ -z `command -v cmake` ]; then
+            if [ "x$DRYRUN" != "x" ]; then
+                echo Fatal: cmake not installed
+                exit 1
+            fi
+        fi
+
+        if [ "x$ACTION" == "xcheck" ]; then
+            echo Sorry, this is a cmake project, no check support
+            exit 1
+        fi
+
+        $RUNMODE mkdir -p build && cd build || exit 1
+
+        if [ "x$ACTION" == "xclean" ]; then
+            $RUNMODE make clean || exit 1
+            exit 0
+        fi
+
+        $RUNMODE cmake -DCMAKE_INSTALL_PREFIX=$PREFIX $SWITCHES ../ || exit 1
+        if [ "$ACTION" == "uninstall" -a -f install_manifest.txt ]; then
+            superusercommand xargs rm < install_manifest.txt || exit 1
+        elif [ "$ACTION" == "install" ]; then
+            $RUNMODE make $JOBFLAGS || exit 1
+            superusercommand make $ACTION $JOBFLAGS || exit 1
+        elif [ "$ACTION" != "configure" ]; then
+            $RUNMODE make $JOBFLAGS || exit 1
+        fi
+        cd ..
+        exit 0
+    fi
+fi
+
+# Autotools or compatible
+echo : Autotools/ make
+if [ "x$ACTION" == "xclean" ]; then
+    if [ -f Makefile ]; then
+        $RUNMODE make clean || exit 1
+        exit 0
+    fi
+    echo Nothing to clean
+    exit 0
+fi
+
+if [ ! -f Makefile -o configure.ac -nt configure -o "x$CONFIGURE" == "x1" ]; then
+    if [ ! -f configure \
+           -o configure.ac -nt configure \
+           -o configure.ac.in -nt configure \
+           -o configure.in -nt configure \
+           -o configure.in.in -nt configure ]; then
+        if [ -f autogen.sh ]; then
+            if [ "x$RUNMODE" != "x" ]; then
+                echo -n 'NOCONFIGURE=1 '
+            fi
+            NOCONFIGURE=1 $RUNMODE sh autogen.sh $PREFIX_ARG $SWITCHES || exit 1
+        else
+            echo Sorry, this does not look like a supported build system
+            exit 1
+        fi
+    fi
+    if [ ! -f Makefile -o configure.ac -nt configure -o "x$CONFIGURE" == "x1" ]; then
+        $RUNMODE sh configure $PREFIX_ARG $SWITCHES || exit 1
+        # | egrep -v '\.h [^u]|config.status' | highlight 'not found'
+    fi
+fi
+
+OPTIONS="LIBTOOLFLAGS='--silent' -s V=0 $JOBFLAG"
+if [ "$ACTION" != "configure" ]; then
+    if [ "$ACTION" == "install" -o "$ACTION" == "uninstall" ]; then
+        $RUNMODE make $OPTIONS || exit 1
+        superusercommand make $ACTION $OPTIONS || exit 1
+    elif [ "$ACTION" == "check" ]; then
+        $RUNMODE make check $OPTIONS || exit 1
+    else
+        $RUNMODE make $OPTIONS || exit 1
+    fi
+fi
+
