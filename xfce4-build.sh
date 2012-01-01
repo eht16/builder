@@ -255,7 +255,6 @@ else
 		START_AT="$2"
 		shift 2
 	fi
-	shift
 	if [ $# -gt 0 ]
 	then
 		XFCE4_MODULES="$@"
