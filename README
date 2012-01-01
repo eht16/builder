@@ -12,3 +12,12 @@ The commands update, clean, build and echo takes as second argument a comma sepa
 xfce4-build.sh build apps/midori apps/gigolo
 (this is useful if you updated all packages and there were only changes in some packages, so you don't have to rebuild all packages)
 If the second argument is omitted, the command takes all packages.
+
+
+The script's behaviour can be changed by setting different environment variables:
+
+PREFIX - the prefix where to install the packages to, default: ./install
+BUILDIT - the full path to the included script "buildit", default: buildit
+LOG - filename to use for logging of stdout of the various build commands, default: /dev/stdout
+ERROR_LOG - filename to use for logging of stderr of the various build commands, default: /dev/stderr
+
