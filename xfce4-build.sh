@@ -79,7 +79,6 @@ xfce/xfce4-panel \
 xfce/xfce4-appfinder \
 xfce/xfce4-session \
 xfce/xfce4-settings \
-xfce/xfce-utils \
 xfce/xfdesktop \
 xfce/xfwm4 \
 xfce/tumbler \
