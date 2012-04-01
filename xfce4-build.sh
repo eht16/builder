@@ -74,8 +74,8 @@ xfce/libxfce4ui \
 xfce/exo \
 xfce/gtk-xfce-engine \
 xfce/garcon \
-xfce/thunar \
 xfce/xfce4-panel \
+xfce/thunar \
 xfce/xfce4-appfinder \
 xfce/xfce4-session \
 xfce/xfce4-settings \
