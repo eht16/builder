@@ -21,7 +21,6 @@
 #
 
 # TODOs:
-# - evaluate a new environment variable to skip certain packages
 # - fix uninstall
 # - improve git cleaning (gc, prune)
 
@@ -217,6 +216,21 @@ function init()
 	fi
 }
 
+function _in_array()
+{
+	haystack=$1
+	needle="$2"
+
+	for i in $haystack
+	do
+		if [ "$i" = "$needle" ]
+		then
+			return 1
+		fi
+	done
+	return 0
+}
+
 # main()  ;-)
 
 if [ "x$1" = "x" -o "x$1" = "xhelp" ]
@@ -273,12 +287,11 @@ else
 			continue
 		fi
 		START_AT=""
-		# FIXME: Allow multiple skip packages
-		case $SKIP in $i)
+		if ! _in_array "$SKIP" "$i"
+		then
 			echo_and_log "Skipping $i" "$INDEX/$COUNT"
 			continue
-			;;
-		esac
+		fi
 		"$cmd" $i "$INDEX/$COUNT"
 	done
 fi

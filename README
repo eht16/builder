@@ -20,4 +20,4 @@ PREFIX - the prefix where to install the packages to, default: ./install
 BUILDIT - the full path to the included script "buildit", default: buildit
 LOG - filename to use for logging of stdout of the various build commands, default: /dev/stdout
 ERROR_LOG - filename to use for logging of stderr of the various build commands, default: /dev/stderr
-
+SKIP - a space separated list of packages to skip when updating/building/cleaning
