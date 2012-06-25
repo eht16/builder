@@ -221,9 +221,9 @@ function _in_array()
 	haystack=$1
 	needle="$2"
 
-	for i in $haystack
+	for j in $haystack
 	do
-		if [ "$i" = "$needle" ]
+		if [ "$j" = "$needle" ]
 		then
 			return 1
 		fi
