@@ -49,7 +49,6 @@ export XDG_DATA_DIRS
 
 # additional configure arguments for certain packages
 # to add options for other packages use OPTIONS_$packagename=...
-OPTIONS_libxfcegui4="--disable-gladeui --with-libglade-module-path=$PREFIX/libglade/2.0"
 OPTIONS_libxfce4ui="--disable-gladeui"
 OPTIONS_xfwm4="--enable-startup-notification --disable-compositor --enable-randr"
 OPTIONS_xfce4_session="--disable-session-screenshots --enable-libgnome-keyring"
@@ -68,7 +67,6 @@ XFCE4_MODULES="\
 xfce/xfce4-dev-tools \
 xfce/libxfce4util \
 xfce/xfconf \
-xfce/libxfcegui4 \
 xfce/libxfce4ui \
 xfce/exo \
 xfce/gtk-xfce-engine \
